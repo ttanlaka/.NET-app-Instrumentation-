@@ -118,3 +118,153 @@ Query your metric:
 metric_name: dotnet_app_http_requests_total
 Click Save to create the chart.
 
+
+
+
+Method 2 Using Nuggets :
+
+
+1. Install the Splunk OpenTelemetry .NET NuGet Package
+The NuGet package method is the easiest and recommended for instrumenting your application, especially if you control the build process but not the machine where the application is running.
+
+Step 1: Install the NuGet Package
+Open your terminal/command prompt.
+
+Navigate to the root directory of your .NET application where the .csproj file is located.
+
+
+cd <path_to_your_application>
+Run the following command to add the Splunk OpenTelemetry Auto Instrumentation NuGet package to your project:
+
+
+dotnet add <project_name>.csproj package Splunk.OpenTelemetry.AutoInstrumentation --prerelease
+Replace <project_name>.csproj with the name of your actual project file.
+
+Step 2: Handle Missing Instrumentation Packages
+If the build fails and prompts you to add missing instrumentation packages, you can either:
+
+Add the missing instrumentation package manually.
+
+Or, you can skip the instrumentation of specific packages by adding them to the SkippedInstrumentation property in your .csproj file. For example:
+
+xml
+Copy
+<PropertyGroup>
+  <SkippedInstrumentations>MongoDB.Driver.Core;StackExchange.Redis</SkippedInstrumentations>
+</PropertyGroup>
+Alternatively, you can do this through the terminal:
+
+
+dotnet build -p:SkippedInstrumentations=StackExchange.Redis%3BMongoDB.Driver.Core
+Step 3: Build the Application
+After installing the NuGet package and handling any missing packages, build the application.
+
+
+dotnet build
+Step 4: Run the Instrumented Application
+After building your application, you’ll find launch scripts generated in the output folder.
+
+For Windows, use the splunk-launch.cmd script.
+For Linux, use the splunk-launch.sh script.
+For example, on Windows:
+
+
+splunk-launch.cmd <application_executable>
+Or using the .NET CLI:
+
+
+splunk-launch.cmd dotnet <your_application.dll>
+Make sure to replace <application_executable> with the name of your executable or the appropriate .dll file.
+
+Step 5: Verify Instrumentation
+(Optional) If you want to verify that the instrumentation is working and view telemetry data in your console, you can add the OTEL_*_EXPORTER environment variables:
+
+For tracing:
+
+
+set OTEL_TRACES_EXPORTER=otlp,console
+For metrics:
+
+
+set OTEL_METRICS_EXPORTER=otlp,console
+For logs:
+
+set OTEL_LOGS_EXPORTER=otlp,console
+Once you run your application, you should start seeing telemetry data in your console and in Splunk Observability Cloud (Splunk O11y Cloud).
+
+
+
+
+
+3. Manual Installation of Splunk OpenTelemetry .NET
+If you prefer to manually install the Splunk OpenTelemetry .NET instrumentation, follow these steps.
+
+Step 1: Download the Splunk OpenTelemetry .NET Distribution
+Download the required installation files from the official GitHub Releases page:
+
+Windows: Download Windows PowerShell module
+Linux: Download Linux installation script
+Import the PowerShell Module (for Windows):
+
+powershell
+Copy
+$module_url = "https://github.com/signalfx/splunk-otel-dotnet/releases/latest/download/Splunk.OTel.DotNet.psm1"
+$download_path = Join-Path $env:temp "Splunk.OTel.DotNet.psm1"
+Invoke-WebRequest -Uri $module_url -OutFile $download_path
+Import-Module $download_path
+Step 2: Install OpenTelemetry for .NET
+Run the install command in PowerShell to install OpenTelemetry.
+
+powershell
+Copy
+Install-OpenTelemetryCore
+Step 3: Register the Instrumentation
+You need to register your application type (e.g., .NET, ASP.NET, Windows service). For example:
+
+For a .NET application:
+
+powershell
+Copy
+Register-OpenTelemetryForCurrentSession -OTelServiceName "MyAppService"
+For ASP.NET applications running on IIS:
+
+powershell
+Copy
+Register-OpenTelemetryForIIS
+You can also add a service version if required:
+
+powershell
+Copy
+$env:OTEL_RESOURCE_ATTRIBUTES='deployment.environment=prod,service.version=1.0'
+Step 4: Run Your Application
+Once the instrumentation is set up, run your application as usual. The telemetry data will be collected and sent to Splunk Observability Cloud.
+
+Step 5: Verify Instrumentation
+As with the NuGet method, you can verify the instrumentation by checking the Splunk Observability Cloud to see if your application's data (traces, metrics, logs) appears.
+
+3. Optional Configuration
+You can configure advanced settings to customize the instrumentation based on your needs.
+
+Change trace propagation formats.
+Change the endpoint URLs.
+Add custom attributes to spans (e.g., for more detailed trace information).
+For more advanced configuration options, refer to the Advanced Configuration page of the Splunk OpenTelemetry .NET documentation.
+
+4. Sending Data to Splunk Observability Cloud Directly
+By default, telemetry data is sent to the local OpenTelemetry Collector. However, if you want to send data directly to Splunk Observability Cloud, you can set the following environment variables:
+
+Windows:
+
+powershell
+Copy
+$env:SPLUNK_ACCESS_TOKEN=<access_token>
+$env:SPLUNK_REALM=<realm>
+Linux:
+
+bash
+Copy
+export SPLUNK_ACCESS_TOKEN=<access_token>
+export SPLUNK_REALM=<realm>
+Replace <access_token> with your Splunk API token and <realm> with your Splunk realm (e.g., us1, eu1).
+
+
